@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="ASCII"?>
+
+<project name="Build custom request handler call-out" default="help" basedir=".">
+	<description>Builds FlexNet Embedded</description>
+
+	<property name="output.dir" location="output" />
+	
+	<property name="callout.war" location="${output.dir}/revenera-fno-fne-callout-service.war" />
+    <property name="lib.dir" location="WEB-INF/lib" />
+	<property name="src.dir" location="src" />
+	<property name="resources.dir" location="resources" />
+	<property name="classes.dir" location="WEB-INF/classes" />
+
+	<property name="build.props" location="build.properties"/>
+
+	<target name="init-buildnumber">
+		<!-- If file doesn't exist, create it with build.number=0 -->
+		<touch file="${build.props}"/>
+
+		<!-- Load existing build.number if present -->
+		<property file="${build.props}"/>
+
+		<!-- Default if missing -->
+		<condition property="build.number" value="0">
+			<not><isset property="build.number"/></not>
+		</condition>
+
+		<!-- Increment and persist -->
+		<propertyfile file="${build.props}">
+			<entry key="build.number" type="int" operation="+" value="1" pattern="0"/>
+		</propertyfile>
+
+		<!-- Reload so ${build.number} is updated in this build -->
+		<property file="${build.props}"/>
+	</target>
+
+	<target name="build"
+			depends="clean, compile, package"
+    	    description="compile the call-out" />
+
+	<target name="compile" depends="clean" description="Compiles the example call-out">
+
+		<mkdir dir="${classes.dir}" />
+		<javac srcdir="${src.dir}" destdir="${classes.dir}" debug="true" includeantruntime="false">
+			<classpath>
+				<fileset dir="${lib.dir}" includes="*.jar" />
+			</classpath>
+		</javac>
+    </target>
+
+	<target name="package"
+			depends="compile, init-buildnumber"
+		    description="Packages up the compiled call-out in a war file">
+
+		<tstamp>
+			<format property="build.timestamp" pattern="yyyy-MM-dd'T'HH:mm:ss'Z'" timezone="UTC"/>
+			<format property="build.time" pattern="HH:mm:ss" timezone="UTC"/>
+			<format property="build.date" pattern="d MMM yyyy" timezone="UTC"/>
+		</tstamp>
+
+		<!-- this copy works -->
+		<echo file="${classes.dir}/revenera.properties">
+build.username=${user.name}
+build.date=${build.time}
+build.time=${build.date}
+build.timestamp=${build.timestamp}
+build.number=${build.number}
+		</echo>
+
+		<war destfile="${callout.war}"
+			 basedir="."
+			 needxmlFile="false"
+			 includes="WEB-INF/**/*.*/">
+
+			<manifest>
+				<attribute name="Built-By" value="${user.name}"/>
+				<attribute name="Build-Time" value="${build.time}"/>
+				<attribute name="Build-Date" value="${build.date}"/>
+				<attribute name="Build-Timestamp" value="${build.timestamp}"/>
+				<attribute name="Build-Number" value="${build.number}"/>
+			</manifest>
+		</war>
+
+		<echo/>
+		<echo message="Build details" />
+		<echo message="-------------" />
+		<echo message="${build.timestamp}" />
+		<echo message="${build.number}" />
+	</target>
+
+	<target name="clean" description="Clean up intermediate build artifacts">
+		<delete dir="${output.dir}" quiet="true" />
+        <delete dir="${classes.dir}" quiet="true" />
+	</target>
+</project>
