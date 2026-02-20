@@ -4,18 +4,16 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="470c99d3-2af9-4d12-a868-f33379b0fcc5" name="Changes" comment="first commit">
-      <change afterPath="$PROJECT_DIR$/WEB-INF/lib/binary-2025.9.0.jar" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/WEB-INF/lib/commons-lang3-3.20.0.jar" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/WEB-INF/lib/jackson-annotations-2.20.jar" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/WEB-INF/lib/jackson-core-2.20.0.jar" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/WEB-INF/lib/jackson-databind-2.20.1.jar" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/WEB-INF/lib/jackson-dataformat-yaml-2.20.0.jar" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/WEB-INF/lib/javax.servlet-api-3.1.0.jar" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/WEB-INF/lib/snakeyaml-2.5.jar" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/build.properties" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/maven-dep.cmd" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
+    <list default="true" id="470c99d3-2af9-4d12-a868-f33379b0fcc5" name="Changes" comment="add missing files">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/WEB-INF/classes/revenera.properties" beforeDir="false" afterPath="$PROJECT_DIR$/WEB-INF/classes/revenera.properties" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/build.properties" beforeDir="false" afterPath="$PROJECT_DIR$/build.properties" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/build.xml" beforeDir="false" afterPath="$PROJECT_DIR$/build.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/com/flexnet/lfs/callout/HealthResponse.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/com/flexnet/lfs/callout/PingInfo.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/com/flexnet/lfs/callout/PingInfo.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/com/flexnet/lfs/callout/PingResponse.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/com/flexnet/lfs/callout/ExtendedPayload.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/lfs/callout/CalloutFactory.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/lfs/callout/CalloutFactory.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/lfs/callout/CapabilityCalloutServlet.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/lfs/callout/CapabilityCalloutServlet.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -118,11 +116,20 @@
       <option name="project" value="LOCAL" />
       <updated>1771435701669</updated>
     </task>
-    <option name="localTasksCounter" value="2" />
+    <task id="LOCAL-00002" summary="add missing files">
+      <option name="closed" value="true" />
+      <created>1771435908085</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1771435908085</updated>
+    </task>
+    <option name="localTasksCounter" value="3" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="first commit" />
-    <option name="LAST_COMMIT_MESSAGE" value="first commit" />
+    <MESSAGE value="add missing files" />
+    <option name="LAST_COMMIT_MESSAGE" value="add missing files" />
   </component>
 </project>

@@ -4,68 +4,70 @@ import org.apache.commons.lang3.SystemProperties;
 import org.apache.commons.lang3.SystemUtils;
 
 import java.io.IOException;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Properties;
+import java.util.TreeMap;
+import java.util.stream.Collectors;
 
 
 public class PingInfo {
-//  public String version;
 
-  public static class BuildInfo {
-    public final String author;
-    public final String date;
-    public final String time;
-    public final String timestamp;
-    public final String build;
-
-    BuildInfo() {
-      try {
-        final Properties props = new Properties();
-
-        props.load(PingInfo.class.getResourceAsStream("/revenera.properties"));
-
-        author = props.getProperty("build.username");
-        date = props.getProperty("build.date");
-        time = props.getProperty("build.time");
-        timestamp = props.getProperty("build.timestamp");
-        build = props.getProperty("build.number");
-      }
-      catch (IOException e) {
-        throw new RuntimeException(e);
-      }
-    }
-  }
-  public static class OperatingSystem {
-    public final String name = SystemUtils.OS_NAME;
-    public final String version = SystemUtils.OS_VERSION;
-    public final String architecture = SystemUtils.OS_ARCH;
-  }
-
-  public static class Environment {
-    public final Integer availableProcessors;
-    public final Long freeMemory;
-    public final Long totalMemory;
-    public final Long maxMemory;
-
-    Environment() {
-      final Runtime runtime = Runtime.getRuntime();
-
-      this.availableProcessors = runtime.availableProcessors();
-      this.freeMemory = runtime.freeMemory();
-      this.totalMemory = runtime.totalMemory();
-      this.maxMemory = runtime.maxMemory();
-    }
-  }
-
-  public final BuildInfo build = new BuildInfo();
-  public final OperatingSystem system = new OperatingSystem();
-  public final Environment environment = new Environment();
+  public final Map<Object,Object> properties;
+  public final Map<Object,Object> os;
+  public final Map<Object,Object> java;
+  public final Map<Object,Object> environment;
 
   public final String hostName = SystemUtils.getHostName();
 
   public final String userName = SystemProperties.getUserName("unknown");//SystemUtils.getUserName();
 
   PingInfo() {
+    try {
+      final Properties props = new Properties();
 
+      props.load(PingInfo.class.getResourceAsStream("/revenera.properties"));
+
+      // no reliance on actual property names
+      this.properties = props.stringPropertyNames().stream()
+          .collect(Collectors.toMap(
+              name -> name,
+              props::getProperty, (e1,e2) -> e1,
+              TreeMap::new
+          ));
+
+
+      final Runtime runtime = Runtime.getRuntime();
+      this.environment = new LinkedHashMap<Object,Object>() {
+        {
+          put("availableProcessors", runtime.availableProcessors());
+          put("freeMemory", runtime.freeMemory());
+          put("totalMemory", runtime.totalMemory());
+          put("maxMemory", runtime.maxMemory());
+        }
+      };
+
+      final Properties systemProps = System.getProperties();
+      this.os = systemProps.stringPropertyNames().stream()
+          .filter(p -> p.startsWith("os."))
+          .collect(Collectors.toMap(
+              name -> name.substring("os.".length()).replace(".", " "),
+              systemProps::getProperty, (e1,e2) -> e1,
+              TreeMap::new
+          ));
+
+      this.java = systemProps.stringPropertyNames().stream()
+          .filter(p -> p.startsWith("java."))
+          .collect(Collectors.toMap(
+              name -> name.substring("java.".length()).replace(".", " "),
+              systemProps::getProperty, (e1,e2) -> e1,
+              TreeMap::new
+          ));
+
+    }
+    catch (IOException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   public static PingInfo create() {

@@ -1,8 +1,6 @@
 package lfs.callout;
 
-import com.flexnet.lfs.callout.Payload;
-import com.flexnet.lfs.callout.PingInfo;
-import com.flexnet.lfs.callout.Response;
+import com.flexnet.lfs.callout.*;
 import com.revenera.gcs.utils.Log;
 import com.revenera.gcs.utils.Utils;
 
@@ -15,11 +13,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.time.Instant;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
-
 
 /**
  * This is an example servlet that implements a capability request call-out.
@@ -42,17 +37,141 @@ public class CapabilityCalloutServlet extends HttpServlet {
 
   private final static Log logger = Log.create(CapabilityCalloutServlet.class);
 
-  private final static Map<Endpoints, String> endpoints = new HashMap<Endpoints, String>() {
+  static final class Data {
+    private final Endpoints endpoint;
+    private final ICallout callout;
+    private final String resource;
+
+    Data(final Endpoints endpoint, final ICallout callout, final String resource) {
+      this.endpoint = endpoint;
+      this.callout = callout;
+      this.resource = resource;
+    }
+
+    public Endpoints getEndpoint() {
+      return endpoint;
+    }
+    public ICallout getCallout() {
+      return callout;
+    }
+    public String getResource() {
+      return resource;
+    }
+  }
+
+  //TODO: augment this...
+  static final ICallout not_implemented_callout = payload -> {
+    logger.log(Log.Level.info,"not_implemented_callout");
+
+    return new Response();
+  };
+
+  //TODO: FINALIZE HOST
+  static final ICallout finalized_host_callout = payload -> {
+    logger.log(Log.Level.info,"finalized_host_callout");
+
+    return new Response() {
+      {
+        this.getHostActionsBuilder()
+            .withAddToVendorDictionary("FINALIZE_HOST", Instant.now().toString())
+            .withDenyAccess(true)
+            .withHostType(payload.hostInfo.hostType)
+            .withDenyCreate(true)
+            .withEnterpriseId(payload.hostInfo.enterpriseId)
+            .build();
+
+        payload.addOnInfo.forEach(addon -> {
+          this.getAddonActionsBuilder()
+              .withActivationId(addon.activationId)
+              .withDenied(true)
+              .build();
+        });
+      }
+    };
+  };
+
+  //TODO: CHECK ACCESS
+  static final ICallout check_access_callout = payload -> {
+    logger.log(Log.Level.info,"check_access_callout");
+
+    return new Response() {
+      {
+        this.getHostActionsBuilder()
+            .withAddToVendorDictionary("CHECK_ACCESS", Instant.now().toString())
+            .withDenyAccess(true)
+            .withHostType(payload.hostInfo.hostType)
+            .withDenyCreate(true)
+            .withEnterpriseId(payload.hostInfo.enterpriseId)
+            .build();
+
+        payload.addOnInfo.forEach(addon -> {
+          this.getAddonActionsBuilder()
+              .withActivationId(addon.activationId)
+              .withDenied(true)
+              .build();
+
+          this.getResponseActionsBuilder()
+              .withAddToStatusList(0, "????")
+              .withLifetime(0)
+              .build();
+        });
+      }
+    };
+  };
+
+  //TODO: FINALIZE RESPONSE
+  static final ICallout finalize_response_callout = payload -> {
+    logger.log(Log.Level.info,"finalize_response_callout");
+
+    return new Response() {
+      {
+        this.getHostActionsBuilder()
+            .withAddToVendorDictionary("FINALIZE_RESPONSE", Instant.now().toString())
+            .withDenyCreate(false)
+            .withDenyAccess(false)
+            .withHostType("FLX_CLIENT")
+            .withEnterpriseId(payload.hostInfo.enterpriseId)
+            .build();
+
+        payload.addOnInfo.forEach(addon -> {
+          this.getAddonActionsBuilder()
+              .withActivationId(addon.activationId)
+              .withSkipConfirmation(false)
+              .withDenied(true)
+              .build();
+        });
+      }
+    };
+  };
+
+  static final ICallout health_callout = payload -> new ExtendedPayload<Map<String,Object>>() {
     {
-      put(Endpoints.HEALTH, "/health");
-      put(Endpoints.PING, "/ping");
-      put(Endpoints.CHECK_ACCESS, "/checkAccess");
-      put(Endpoints.FINALIZE_HOST, "/finalizeHost");
-      put(Endpoints.FINALIZE_RESPONSE, "/finalizeResponse");
+      this.timestamp = Instant.now().toString();
+      this.payload = new TreeMap<String, Object>() {
+        {
+          System.getProperties().forEach((key, value) -> {
+            put(key.toString(), value);
+          });
+        }
+      };
     }
   };
 
-  private final static CalloutFactory factory = new CalloutFactory(true);
+  static final ICallout ping_callout = payload -> new ExtendedPayload<PingInfo>() {
+    {
+      this.timestamp = Instant.now().toString();
+      this.payload = PingInfo.create();
+    }
+  };
+
+  private final static List<Data> endpoints = Arrays.asList(
+      new Data(Endpoints.HEALTH, health_callout, "/health"),
+      new Data(Endpoints.PING, ping_callout, "/ping"),
+      new Data(Endpoints.CHECK_ACCESS, check_access_callout,"/checkAccess"),
+      new Data(Endpoints.FINALIZE_HOST, finalized_host_callout,"/finalizeHost"),
+      new Data(Endpoints.FINALIZE_RESPONSE, finalize_response_callout, "/finalizeResponse"));
+
+    private final static CalloutFactory factory = new CalloutFactory();
 
   static {
     logger.array(Log.Level.info, "Service starting", Instant.now().toString());
@@ -63,22 +182,15 @@ public class CapabilityCalloutServlet extends HttpServlet {
 
     if (config != null) {
       logger.array(Log.Level.debug, "Revenera callout service configuration found", config);
-      endpoints.forEach((key, value) -> {
-        if (config.contains(value)) {
-          factory.implementDefaultCallout(key);
+      endpoints.forEach(data -> {
+        if (config.contains(data.resource)) {
+          factory.addCallout(data.endpoint, data.callout);
         }
       });
     }
     else {
       logger.log(Log.Level.debug,"configuration not found");
-      factory
-        .implementDefaultCallout(Endpoints.HEALTH)
-        .implementDefaultCallout(Endpoints.PING)
-        .implementDefaultCallout(Endpoints.CHECK_ACCESS)
-        .implementDefaultCallout(Endpoints.FINALIZE_HOST)
-        .implementDefaultCallout(Endpoints.FINALIZE_RESPONSE);
     }
-
   }
 
   boolean debug;
@@ -86,7 +198,7 @@ public class CapabilityCalloutServlet extends HttpServlet {
   public CapabilityCalloutServlet() {
     logger.array(Log.Level.info, "Service created", Instant.now().toString());
 
-    this.debug = true;
+    this.debug = false;
   }
 
   @Override
@@ -126,9 +238,9 @@ public class CapabilityCalloutServlet extends HttpServlet {
 
   static Endpoints findByMethodName(final String restMethodName) throws ServiceException {
 
-    return endpoints.entrySet().stream()
-        .filter(e -> restMethodName.contains(e.getValue()))
-        .map(Map.Entry::getKey)
+    return endpoints.stream()
+        .filter(e -> restMethodName.contains(e.getResource()))
+        .map(Data::getEndpoint)
         .findFirst()
         .orElseThrow(() -> new ServiceException("unrecognized resource " + restMethodName, HttpServletResponse.SC_BAD_REQUEST));
   }
